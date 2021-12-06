@@ -9,11 +9,11 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STOPPING_TARGET_SPEED_OFFSET = 1.0
 REGEN_THRESHOLD = 0.02
+RATE = 100.0
 
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
 ACCEL_MAX_ISO = 2.0 # m/s^2
-
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target, v_pid,
                              output_accel, brake_pressed, cruise_standstill, min_speed_can):
@@ -94,6 +94,8 @@ class LongControl():
 
     # Update state machine
     output_accel = self.last_output_accel
+    v_ego_pid = max(CS.vEgo, CP.minSpeedCan)
+    
     self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
                                                        v_target_future, self.v_pid, output_accel,
                                                        CS.brakePressed, CS.cruiseState.standstill, CP.minSpeedCan)
