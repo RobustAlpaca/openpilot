@@ -47,11 +47,49 @@ class CarInterface(CarInterfaceBase):
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+    
+    ret.lateralTuning.init('lqr')
+    ret.lateralTuning.lqr.scale = 1975.0
+    ret.lateralTuning.lqr.ki = 0.032
+    ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
+    ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
+    ret.lateralTuning.lqr.c = [1., 0.]
+    ret.lateralTuning.lqr.k = [-110., 451.]
+    ret.lateralTuning.lqr.l = [0.33, 0.318]
+    ret.lateralTuning.lqr.dcGain = 0.00225  
+    
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.0
-    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+#    ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    
+#    ret.lateralTuning.pid.kpBP = [0., 40.]
+#    ret.lateralTuning.pid.kpV = [0., 0.17]
+#    ret.lateralTuning.pid.kiBP = [0.]
+#    ret.lateralTuning.pid.kiV = [0.]
+    
+    ret.longitudinalTuning.kpBP = [-5.* CV.KPH_TO_MS, 0., 10.*CV.KPH_TO_MS, 25.*CV.KPH_TO_MS, 40.*CV.KPH_TO_MS, 60.*CV.KPH_TO_MS, 80.*CV.KPH_TO_MS, 100.*CV.KPH_TO_MS, 110.*CV.KPH_TO_MS]
+    ret.longitudinalTuning.kpV = [1.5, 1.25, 1.1, 0.81, 0.61, 0.57, 0.54, 0.51, 0.48]
+    ret.longitudinalTuning.kiBP = [0., 130. * CV.KPH_TO_MS]
+    ret.longitudinalTuning.kiV = [0.075, 0.05]
+    
+    ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
+    
+    ret.steerActuatorDelay = 0.2  
+    ret.longitudinalActuatorDelayLowerBound = 0.10
+    ret.longitudinalActuatorDelayUpperBound = 0.15
+    
+    ret.startAccel = 0.1
+    ret.stopAccel = -2.0
+    ret.startingAccelRate = 1.0
+    ret.stoppingDecelRate = 2.4
+    ret.vEgoStopping = 0.5
+    ret.vEgoStarting = 0.5
+    ret.stoppingControl = True
+    
+    ret.steerLimitTimer = 0.4
+    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     if candidate == CAR.VOLT:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -63,12 +101,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
 
-      ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
-      ret.steerActuatorDelay = 0.2
     elif candidate == CAR.BOLT:
       # initial engage unkown - copied from Volt. Stop and go unknown.
       ret.minEnableSpeed = -1
@@ -79,16 +111,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
       tire_stiffness_factor = 0.5
-
-      ret.lateralTuning.init('lqr')
-      ret.lateralTuning.lqr.scale = 1975.0
-      ret.lateralTuning.lqr.ki = 0.032
-      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      ret.lateralTuning.lqr.c = [1., 0.]
-      ret.lateralTuning.lqr.k = [-110., 451.]
-      ret.lateralTuning.lqr.l = [0.33, 0.318]
-      ret.lateralTuning.lqr.dcGain = 0.00225
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
@@ -138,9 +160,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.49
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
-      ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -152,14 +171,10 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.longitudinalTuning.kpBP = [0., 30.]
-    ret.longitudinalTuning.kpV = [0.6, 0.65]
-    ret.longitudinalTuning.kiBP = [0., 20.]
-    ret.longitudinalTuning.kiV = [0.045, 0.055]
-
-    ret.startAccel = 0.1
-    ret.steerLimitTimer = 0.4
-    ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
+#    ret.longitudinalTuning.kpBP = [0., 30.]
+#    ret.longitudinalTuning.kpV = [0.6, 0.65]
+#    ret.longitudinalTuning.kiBP = [0., 20.]
+#    ret.longitudinalTuning.kiV = [0.045, 0.055]
 
     return ret
 
