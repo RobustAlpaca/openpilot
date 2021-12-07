@@ -59,7 +59,8 @@ class CarController():
       comma_pedal = 0
     elif CS.adaptive_Cruise:
       min_pedal_speed = interp(CS.out.vEgo, VEL, MIN_PEDAL)
-      comma_pedal = clip(actuators.accel, min_pedal_speed, 1.)
+      pedal_accel = actuators.accel*0.5
+      comma_pedal = clip(pedal_accel, min_pedal_speed, 1.)
 
     if (frame % 4) == 0:
       idx = (frame // 4) % 4
